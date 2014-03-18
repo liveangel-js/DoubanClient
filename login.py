@@ -1,6 +1,8 @@
-# -- coding:gbk --
+#!C:\Python27\python
+# -*- coding:utf-8 -*- 
 import sys, time, os, re
 import urllib, urllib2, cookielib
+import time,thread,random
 
 loginurl = 'https://www.douban.com/accounts/login'
 cookie = cookielib.CookieJar()
@@ -9,11 +11,15 @@ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 params = {
 "form_email":"27481991@qq.com",
 "form_password":"skm7585999",
-"source":"index_nav" #Ã»ÓĞµÄ»°µÇÂ¼²»³É¹¦
+"source":"index_nav" #æ²¡æœ‰çš„è¯ç™»å½•ä¸æˆåŠŸ
 }
 
+expression_list=[">_<|||","^_^","âŠ™ï¹âŠ™â€–","^_^","â†’_â†’","..@_@|||||..","â€¦(âŠ™_âŠ™;)â€¦",
+                 "o_o .... ","O__O\"","///^_^.......","@_@a","o_O???","ï¼ˆâŠ™oâŠ™ï¼‰",
+                 "(ï½ o ï½)~zZ"]
+
+
 def post_group_topic(title,content):
-    print '×¼±¸½øĞĞ·¢Ìû'
     global cookie,opener
     p={"ck":""}
     c = [c.value for c in list(cookie) if c.name == 'ck']
@@ -22,7 +28,7 @@ def post_group_topic(title,content):
         addtopicurl="http://www.douban.com/group/163816/new_topic"
         p["rev_title"] = title
         p["rev_text"] = content
-        p["rev_submit"] = 'ºÃÁË£¬·¢ÑÔ'
+        p["rev_submit"] = 'å¥½äº†ï¼Œå‘è¨€'
 
         request=urllib2.Request(addtopicurl)
         request.add_header("User-Agent","Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11")
@@ -33,12 +39,12 @@ def post_group_topic(title,content):
 #        print resp.getcode()
 #        print resp.info()
 #        print resp.geturl()
-        print '·¢Ìû³É¹¦'
+        print 'å‘å¸–æˆåŠŸ'
     else:
         print 'Error post'
 
 def post_self_broadcast(content):
-    print '×¼±¸·¢¹ã²¥'
+    print 'å‡†å¤‡å‘å¹¿æ’­'
     global cookie,opener
     p={"ck":""}
     c = [c.value for c in list(cookie) if c.name == 'ck']
@@ -55,36 +61,128 @@ def post_self_broadcast(content):
 #        print resp.getcode()
 #        print resp.info()
 #        print resp.geturl()
-        print '·¢¹ã²¥³É¹¦'
+        print 'å‘å¹¿æ’­æˆåŠŸ'
     else:
         print 'Error broadcast'
-        
+
+def get_group_topic_list(filename=''):
+    global opener,cookie
+    print 'getfilename %s' %filename
+    requestUrl = 'http://www.douban.com/group/'
+    request = urllib2.Request(requestUrl)
+    request.add_header("User-Agent","Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11")
+    request.add_header("Accept-Charset", "GBK,utf-8;q=0.7,*;q=0.3")
+    request.add_header("Host", "www.douban.com")
+    request.add_header("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+    resp = opener.open(request)
+#    print resp.geturl()
+#    print resp.info()
+    print resp.getcode()
+    html = resp.read()
+  
+    topic_url_pat = re.compile(r'<td class="td-subject"><a href="(.+?)" title=".+?" class="title">')
+    result = topic_url_pat.findall(html)
+    if filename =='':
+        for a in result:
+            print a
+    else:
+        printer = open(filename,'w')
+        x =0
+        for a in result:
+            if x==0:
+                post_topic_reply(a)
+            
+            printer.write(a)
+            printer.write('\n')
+            x+=1
+        printer.close()
+
+def get_random_reply():
+    global expression_list
+    number = random.randrange(500000)
+    number1 = random.randrange(500000)
+    index = random.randrange(len(expression_list))
+    content = "%s sdwq %d %d" % (expression_list[index],number,number1)
+    return content
+
+def post_topic_reply(url):
+    print "å‡†å¤‡å›å¤"
+    global cookie,opener,expression_list
+    p={"ck":""}
+    c = [c.value for c in list(cookie) if c.name == 'ck']
+    if len(c) > 0:
+        p["ck"] = c[0].strip('"')
+        addtopicurl="%sadd_comment" % url
+        p["rv_comment"] = get_random_reply()
+        p["submit_btn"] = "åŠ ä¸Šå»"
+        p["start"]=0
+        request=urllib2.Request(addtopicurl)
+        request.add_header("User-Agent","Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11")
+        request.add_header("Accept-Charset", "GBK,utf-8;q=0.7,*;q=0.3")
+        request.add_header("Origin", "http://www.douban.com")
+        request.add_header("Referer", "http://www.douban.com/")
+        resp = opener.open(request, urllib.urlencode(p))
+#        print resp.getcode()
+#        print resp.info()
+#        print resp.geturl()
+        print "å›å¤æˆåŠŸ"
+    else:
+        print 'Error reply'
     
 
 
-#´ÓÊ×Ò³Ìá½»µÇÂ¼
-response=opener.open(loginurl, urllib.urlencode(params))
-
-#ÑéÖ¤³É¹¦Ìø×ªÖÁµÇÂ¼Ò³
-if response.geturl() == "https://www.douban.com/accounts/login":
-    html=response.read()
-#ÑéÖ¤ÂëÍ¼Æ¬µØÖ·
-    imgurl=re.search(r'<img id="captcha_image" src="(.+?)" alt="captcha" class="captcha_image"/>', html)
-    if imgurl:
-        url=imgurl.group(1)
-#½«Í¼Æ¬±£´æÖÁÍ¬Ä¿Â¼ÏÂ
-        res=urllib.urlretrieve(url, 'v.jpg')
-#»ñÈ¡captcha-id²ÎÊı
-        captcha=re.search('<input type="hidden" name="captcha-id" value="(.+?)"/>' ,html)
-        if captcha:
-            vcode=raw_input('ÇëÊäÈëÍ¼Æ¬ÉÏµÄÑéÖ¤Âë£º')
-            params["captcha-solution"] = vcode
-            params["captcha-id"] = captcha.group(1)
-            params["user_login"] = "µÇÂ¼"
-#Ìá½»ÑéÖ¤ÂëÑéÖ¤
-            response=opener.open(loginurl, urllib.urlencode(params))
+def writefile():
+    
+    cnt =1
+    stringname = 'topiclist%d.txt' % cnt
+    filetxt = open('topiclist%d.txt' % cnt,'w')
+    filetxt.write('dasdsad')
+    filetxt.close()
             
-            if response.geturl() == "http://www.douban.com/":
-                print 'login success ! '
-                #post_group_topic('testdwqwe','just english')
-                post_self_broadcast('posted by python for testsÎÒ')
+
+def get_topic_by_time(number, interval):
+    cnt=0
+    while cnt<5:
+        print "Thread:(%d) Time:%s/n" % (number,time.ctime())
+        get_group_topic_list('topiclist%d.txt' % cnt)
+        
+        time.sleep(interval)
+        cnt+=1
+        
+
+    thread.exit_thread()
+    
+def start():
+    global cookie,opener,loginurl,params
+
+#ä»é¦–é¡µæäº¤ç™»å½•
+    response=opener.open(loginurl, urllib.urlencode(params))
+
+    #éªŒè¯æˆåŠŸè·³è½¬è‡³ç™»å½•é¡µ
+    if response.geturl() == "https://www.douban.com/accounts/login":
+        html=response.read()
+    #éªŒè¯ç å›¾ç‰‡åœ°å€
+        imgurl=re.search(r'<img id="captcha_image" src="(.+?)" alt="captcha" class="captcha_image"/>', html)
+        if imgurl:
+            url=imgurl.group(1)
+    #å°†å›¾ç‰‡ä¿å­˜è‡³åŒç›®å½•ä¸‹
+            res=urllib.urlretrieve(url, 'v.jpg')
+    #è·å–captcha-idå‚æ•°
+            captcha=re.search('<input type="hidden" name="captcha-id" value="(.+?)"/>' ,html)
+            if captcha:
+                vcode=raw_input('è¯·è¾“å…¥å›¾ç‰‡ä¸Šçš„éªŒè¯ç ï¼š')
+                params["captcha-solution"] = vcode
+                params["captcha-id"] = captcha.group(1)
+                params["user_login"] = "ç™»å½•"
+    #æäº¤éªŒè¯ç éªŒè¯
+                response=opener.open(loginurl, urllib.urlencode(params))
+                
+                if response.geturl() == "http://www.douban.com/":
+                    print 'login success ! '
+                    #post_group_topic('testdwqwe','just english')
+                    #post_self_broadcast('posted by python for testsæˆ‘')
+                    thread.start_new_thread(get_topic_by_time,(1,5))
+
+if __name__=='__main__':
+    start()
+    #print get_random_reply()
